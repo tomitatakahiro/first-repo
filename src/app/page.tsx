@@ -5,10 +5,10 @@ import { useState } from "react";
 // 1件分の記録の形
 type LogEntry = {
   id: number;
-  message: string;     // コメント
-  createdAt: string;   // 日時
-  intensity: number;   // 今回のムカつき度（連打回数）
-  comfort: string;     // AIからのひと言
+  message: string; // コメント
+  createdAt: string; // 日時
+  intensity: number; // 今回のムカつき度（連打回数）
+  comfort: string; // AIからのひと言
 };
 
 // ランダムに1つ選ぶヘルパー
@@ -121,6 +121,8 @@ const generateComfortMessage = (intensity: number, rawMessage: string): string =
 export default function Home() {
   // 総合連打回数（これまでの全部）
   const [totalCount, setTotalCount] = useState(0);
+  // 満足度のカウント
+  const [manzokuCount, setManzokuCount] = useState(0);
   // 今日のムカつき度（本日の合計）
   const [todayCount, setTodayCount] = useState(0);
   const [todayKey, setTodayKey] = useState(getTodayKey());
@@ -131,7 +133,7 @@ export default function Home() {
   // ログ一覧
   const [logs, setLogs] = useState<LogEntry[]>([]);
 
-  // 連打ボタン
+  // ムカつきボタン（+1）
   const handleTap = () => {
     const currentKey = getTodayKey();
 
@@ -142,8 +144,32 @@ export default function Home() {
     }
 
     setEpisodeCount((v) => v + 1); // 今回のムカつき度
-    setTodayCount((v) => v + 1);   // 今日の合計
-    setTotalCount((v) => v + 1);   // 総合
+    setTodayCount((v) => v + 1); // 今日の合計
+    setTotalCount((v) => v + 1); // 総合
+  };
+
+  // 「いいね！」ボタン（ムカつき度を -1 するイメージ）
+  const handleTap2 = () => {
+    const currentKey = getTodayKey();
+
+    if (currentKey !== todayKey) {
+      setTodayKey(currentKey);
+      setTodayCount(0);
+    }
+
+    setEpisodeCount((v) => Math.max(0, v - 1));
+    setTodayCount((v) => Math.max(0, v - 1));
+    setTotalCount((v) => Math.max(0, v - 1));
+  };
+
+  // 満足度 +1
+  const handleManzoku = () => {
+    setManzokuCount((v) => v + 1);
+  };
+
+  // 満足度 -1
+  const handleManzokuMinus = () => {
+    setManzokuCount((v) => Math.max(0, v - 1));
   };
 
   // 記録ボタン
@@ -168,11 +194,10 @@ export default function Home() {
     setComment("");
   };
 
-  // 今日の分だけリセット
+  // 今日の分だけリセット（ムカつき）
   const handleResetToday = () => {
     setTodayCount(0);
     setEpisodeCount(0);
-    setTodayKey(getTodayKey());
   };
 
   // 全部リセット
@@ -183,6 +208,7 @@ export default function Home() {
     setComment("");
     setLogs([]);
     setTodayKey(getTodayKey());
+    setManzokuCount(0);
   };
 
   // 報告書（PDF）出力
@@ -208,17 +234,13 @@ export default function Home() {
               <div className="text-sm font-medium text-zinc-500 dark:text-zinc-300">
                 総合連打回数（これまでの合計）
               </div>
-              <div className="text-5xl font-bold tabular-nums">
-                {totalCount}
-              </div>
+              <div className="text-5xl font-bold tabular-nums">{totalCount}</div>
             </div>
             <div>
               <div className="text-sm font-medium text-zinc-500 dark:text-zinc-300">
                 今日のムカつき度（本日の合計）
               </div>
-              <div className="text-4xl font-bold tabular-nums">
-                {todayCount} 回
-              </div>
+              <div className="text-4xl font-bold tabular-nums">{todayCount} 回</div>
             </div>
           </div>
 
@@ -227,9 +249,15 @@ export default function Home() {
             <div className="text-sm font-medium text-zinc-500 dark:text-zinc-300">
               今回のムカつき度（このエピソードの連打回数）
             </div>
-            <div className="text-3xl font-bold tabular-nums">
-              {episodeCount} 回
+            <div className="text-3xl font-bold tabular-nums">{episodeCount} 回</div>
+          </div>
+
+          {/* 満足度 */}
+          <div>
+            <div className="text-sm font-medium text-zinc-500 dark:text-zinc-300">
+              満足度
             </div>
+            <div className="text-3xl font-bold tabular-nums">{manzokuCount} 回</div>
           </div>
 
           {/* ボタン群 */}
@@ -240,14 +268,30 @@ export default function Home() {
             >
               ムカついた！（連打してね）
             </button>
-
+            <button
+              className="rounded-full bg-black px-4 py-2 text-sm font-semibold text-white transition hover:bg-zinc-800 dark:bg-white dark:text-black dark:hover:bg-zinc-200"
+              onClick={handleTap2}
+            >
+              いいね！（連打してね）
+            </button>
             <button
               className="rounded-full border border-zinc-300 px-4 py-2 text-sm font-semibold text-black transition hover:bg-zinc-200 dark:border-zinc-600 dark:text-white dark:hover:bg-zinc-700"
               onClick={handleResetToday}
             >
               今日の分だけリセット
             </button>
-
+            <button
+              className="rounded-full border border-zinc-300 px-4 py-2 text-sm font-semibold text-black transition hover:bg-zinc-200 dark:border-zinc-600 dark:text-white dark:hover:bg-zinc-700"
+              onClick={handleManzoku}
+            >
+              満足度 +
+            </button>
+            <button
+              className="rounded-full border border-zinc-300 px-4 py-2 text-sm font-semibold text-black transition hover:bg-zinc-200 dark:border-zinc-600 dark:text-white dark:hover:bg-zinc-700"
+              onClick={handleManzokuMinus}
+            >
+              満足度 −
+            </button>
             <button
               className="rounded-full border border-zinc-300 px-4 py-2 text-sm font-semibold text-black transition hover:bg-zinc-200 dark:border-zinc-600 dark:text-white dark:hover:bg-zinc-700"
               onClick={handleResetAll}
@@ -275,7 +319,7 @@ export default function Home() {
 
             <div className="flex justify-end">
               <button
-                className="rounded-full bg-black px-4 py-2 text-sm font-semibold text白 text-white transition hover:bg-zinc-800 disabled:opacity-40 dark:bg-white dark:text-black dark:hover:bg-zinc-200"
+                className="rounded-full bg-black px-4 py-2 text-sm font-semibold text-white transition hover:bg-zinc-800 disabled:opacity-40 dark:bg-white dark:text-black dark:hover:bg-zinc-200"
                 onClick={handleAddLog}
                 disabled={episodeCount === 0 && !comment.trim()}
               >
